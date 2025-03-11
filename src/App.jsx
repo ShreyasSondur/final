@@ -14,14 +14,29 @@ function HomePage() {
 }
 
 function FinalCluePage() {
+    const [image, setImage] = useState(localStorage.getItem('uploadedImage'));
+
+    useEffect(() => {
+        const checkImage = () => setImage(localStorage.getItem('uploadedImage'));
+        window.addEventListener('storage', checkImage);
+        return () => window.removeEventListener('storage', checkImage);
+    }, []);
+
     return (
         <div className="container">
-            <h1>🎯 Congratulations! You have found the final clue. 🎯</h1>
-            <p>Final task is to find X man and take a selfie.</p>
-            <h2 className="warning">⚠️ WARNING: You need at least 8 clue answers to win. ⚠️</h2>
-            <Link to="/winner">
-                <button className="primary-btn">Next</button>
-            </Link>
+            {image ? (
+                <div>
+                    <h2 className="winner">🏆 Winner! 🏆</h2>
+                    <img src={image} alt="Uploaded Selfie" className="winner-image" />
+                </div>
+            ) : (
+                <div>
+                    <h1>🎯 Congratulations! You have found the final clue. 🎯</h1>
+                    <p className="highlight">Final task is to find <b>Saifaz (Main Techyuva Coordinator)</b> and take a selfie.</p>
+                    <h2 className="warning">⚠️ WARNING: You need at least 8 clue answers to win. ⚠️</h2>
+                    <Link to="/winner"><button className="primary-btn">Next</button></Link>
+                </div>
+            )}
         </div>
     );
 }
@@ -37,6 +52,7 @@ function WinnerPage() {
                 const imageUrl = event.target.result;
                 setImage(imageUrl);
                 localStorage.setItem('uploadedImage', imageUrl);
+                window.dispatchEvent(new Event('storage')); // Trigger refresh in other components
             };
             reader.readAsDataURL(file);
         }
@@ -56,29 +72,46 @@ function WinnerPage() {
                     />
                 </div>
             )}
-
-            {image && (
-                <div>
-                    <h2 className="winner">🏆 Winner! 🏆</h2>
-                    <img src={image} alt="Uploaded Selfie" className="winner-image" />
-                </div>
-            )}
         </div>
     );
 }
 
 function RemoveImagePage() {
     const navigate = useNavigate();
+    const [password, setPassword] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    const handlePasswordSubmit = () => {
+        if (password === 'GOJO') {
+            setIsAuthenticated(true);
+        } else {
+            alert('Incorrect password!');
+        }
+    };
 
     const handleRemoveImage = () => {
         localStorage.removeItem('uploadedImage');
-        navigate('/winner');
+        window.dispatchEvent(new Event('storage')); // Trigger refresh in other components
+        navigate('/final-clue');
     };
 
     return (
         <div className="container">
             <h1>Admin Panel</h1>
-            <button onClick={handleRemoveImage} className="danger-btn">Remove Image</button>
+            {!isAuthenticated ? (
+                <div>
+                    <input
+                        type="password"
+                        placeholder="Enter Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="password-input"
+                    />
+                    <button onClick={handlePasswordSubmit} className="primary-btn">Submit</button>
+                </div>
+            ) : (
+                <button onClick={handleRemoveImage} className="danger-btn">Remove Image</button>
+            )}
         </div>
     );
 }
